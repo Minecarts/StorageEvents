@@ -1,0 +1,8 @@
+name: StorageEvents
+description: "Adds storage-related events (open, close, withdraw, deposit)"
+author: megabytes
+website: http://minecarts.com/
+
+main: com.minecarts.storageevents.Plugin
+version: ${pom.version}
+load: STARTUP
