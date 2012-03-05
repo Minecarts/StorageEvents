@@ -31,15 +31,15 @@ public class Plugin extends JavaPlugin implements Listener {
     
     
     @EventHandler
-    public void on(InventoryOpenEvent event) {
+    public void onInventoryOpen(InventoryOpenEvent event) {
         handleEvent(event);
     }
     @EventHandler
-    public void on(InventoryCloseEvent event) {
+    public void onInventoryClose(InventoryCloseEvent event) {
         handleEvent(event);
     }
     @EventHandler
-    public void on(InventoryClickEvent event) {
+    public void onInventoryClick(InventoryClickEvent event) {
         handleEvent(event);
     }
     
@@ -56,7 +56,10 @@ public class Plugin extends JavaPlugin implements Listener {
     
     private void handleInventory(InventoryEvent originalEvent, Inventory inventory) {
         InventoryHolder holder = inventory.getHolder();
-        if(!(holder instanceof Chest || holder instanceof Dispenser || holder instanceof Furnace)) return;
+        if(!(holder instanceof Chest
+                || holder instanceof Dispenser
+                || holder instanceof Furnace
+                || holder instanceof BrewingStand)) return;
         
         Block block = ((BlockState) holder).getBlock();
         
@@ -79,41 +82,41 @@ public class Plugin extends JavaPlugin implements Listener {
             if(!(clickEvent.getWhoClicked() instanceof Player)) return;
             Player player = (Player) clickEvent.getWhoClicked();
             
-            int slot = clickEvent.getRawSlot();
-            if(slot == InventoryView.OUTSIDE) return;
+            if(clickEvent.getRawSlot() == InventoryView.OUTSIDE) return;
+            boolean clickWithinStorage = clickEvent.getRawSlot() < clickEvent.getInventory().getSize();
             
             if(clickEvent.isShiftClick()) { // full item stack/slot movement
-                ItemStack item = clickEvent.getCurrentItem();
-                if(item.getAmount() == 0) return; // empty slot, nothing happens on shift click
+                ItemStack slot = clickEvent.getCurrentItem();
+                if(slot.getAmount() == 0) return; // empty slot, nothing happens on shift click
                 
-                if(slot < inventory.getSize()) { // storage slot widthdraws into inventory on shift click
-                    callEvent(originalEvent, new StorageWithdraw(player, block, inventory, item));
+                if(clickWithinStorage) { // storage slot widthdraws into inventory on shift click
+                    callEvent(originalEvent, new StorageWithdraw(player, block, inventory, slot));
                 }
                 else { // inventory slot deposits into storage on shift click
-                    callEvent(originalEvent, new StorageDeposit(player, block, inventory, item));
+                    callEvent(originalEvent, new StorageDeposit(player, block, inventory, slot));
                 }
             }
             else { // regular inventory interactions
-                if(slot >= inventory.getSize()) return; // clicked slot not within storage container
+                if(!clickWithinStorage) return; // clicked slot not within storage container
                 
                 ItemStack cursor = clickEvent.getCursor();
-                ItemStack item = clickEvent.getCurrentItem();
+                ItemStack slot = clickEvent.getCurrentItem();
                 
                 if(cursor.getAmount() == 0) { // nothing on cursor, pick up item from slot
-                    if(item.getAmount() == 0) return; // picking up an empty slot does nothing
-                    callEvent(originalEvent, new StorageWithdraw(player, block, inventory, item));
+                    if(slot.getAmount() == 0) return; // picking up an empty slot does nothing
+                    callEvent(originalEvent, new StorageWithdraw(player, block, inventory, slot));
                 }
                 else { // cursor has item, drop item into slot
-                    if(item.getAmount() == 0) { // empty slot
+                    if(slot.getAmount() == 0) { // empty slot
                         callEvent(originalEvent, new StorageDeposit(player, block, inventory, cursor));
                     }
-                    else if(item.getType().equals(cursor.getType())) { // slot item matches cursor item, add to stack
-                        if(item.getAmount() >= item.getMaxStackSize()) return; // full stack in slot
+                    else if(slot.getType().equals(cursor.getType())) { // slot item matches cursor item, add to stack
+                        if(slot.getAmount() >= slot.getMaxStackSize()) return; // full stack in slot
                         callEvent(originalEvent, new StorageDeposit(player, block, inventory, cursor));
                     }
                     else { // non-matching item types, clicking swaps the two
                         callEvent(originalEvent, new StorageDeposit(player, block, inventory, cursor));
-                        callEvent(originalEvent, new StorageWithdraw(player, block, inventory, item));
+                        callEvent(originalEvent, new StorageWithdraw(player, block, inventory, slot));
                     }
                 }
             }
