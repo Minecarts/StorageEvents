@@ -32,36 +32,44 @@ public class Plugin extends JavaPlugin implements Listener {
     
     @EventHandler
     public void onInventoryOpen(InventoryOpenEvent event) {
+        debug("InventoryOpenEvent by {0}", event.getPlayer().getName());
         handleEvent(event);
     }
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
+        debug("InventoryCloseEvent by {0}", event.getPlayer().getName());
         handleEvent(event);
     }
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
+        debug("InventoryClickEvent by {0}", event.getView().getPlayer().getName());
         handleEvent(event);
     }
     
     
     private void handleEvent(InventoryEvent event) {
         if(event.getInventory() instanceof DoubleChestInventory) {
+            debug("Handling inventory event for each side of double chest");
             handleInventory(event, ((DoubleChestInventory) event.getInventory()).getLeftSide());
             handleInventory(event, ((DoubleChestInventory) event.getInventory()).getRightSide());
         }
         else {
+            debug("Handling inventory event");
             handleInventory(event, event.getInventory());
         }
     }
     
     private void handleInventory(InventoryEvent originalEvent, Inventory inventory) {
         InventoryHolder holder = inventory.getHolder();
+        debug("Got holder {0}", holder);
+        
         if(!(holder instanceof Chest
                 || holder instanceof Dispenser
                 || holder instanceof Furnace
                 || holder instanceof BrewingStand)) return;
         
         Block block = ((BlockState) holder).getBlock();
+        debug("Got block {0}", block);
         
         
         if(originalEvent instanceof InventoryOpenEvent) {
